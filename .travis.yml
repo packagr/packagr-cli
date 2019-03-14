@@ -4,6 +4,9 @@ python: "3.6"
 install:
   - echo "hello"
 
+script:
+  - echo "hello"
+
 before_deploy:
   - pip install --upgrade pip==18.1
   - pip install poetry
