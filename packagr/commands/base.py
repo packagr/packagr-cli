@@ -1,5 +1,5 @@
 from cleo import Command as BaseCommand
-from utilities import get_package_config, write_package_content
+from packagr.utilities import get_package_config, write_package_content
 from typing import Any
 import os
 
@@ -55,4 +55,21 @@ class Command(BaseCommand):
             existing.append(value)
 
         self.update_config(config, **{key: existing}, path=path)
+        return True
+
+    def remove(self, config: dict, key: str, value: Any, path: str = 'packagr.toml') -> True:
+        array = config.get(key, [])
+
+        try:
+            assert isinstance(array, list)
+
+        except AssertionError:
+            self.line(f'<error>Cannot remove item because the property is not an arrary</error>')
+            return
+
+        try:
+            array.remove(value)
+        except ValueError:
+            return
+        self.update_config(config, **{key: array}, path=path)
         return True

@@ -1,6 +1,6 @@
-from commands.base import Command
+from packagr.commands.base import Command
 from distutils.core import setup
-from utilities import get_package_config
+from packagr.utilities import get_package_config
 import os
 import requests
 import setuptools #  DO NOT REMOVE THIS - IT IS IMPORTANT, EVEN THOUGH IT APPEARS TO NOT BE USED

@@ -15,7 +15,11 @@ toml = "^0.10.0"
 wheel = "^0.33.1"
 requests = "^2.21"
 
+[tool.poetry.scripts]
+packagr = "packagr:run"
+
 [tool.poetry.dev-dependencies]
+cleo = "^0.7.2"
 pytest = "^3.0"
 
 [build-system]

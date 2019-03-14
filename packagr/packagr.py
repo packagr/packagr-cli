@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from cleo import Application
-from commands import admin, packaging
+from packagr.commands import admin, packaging
 
 
 application = Application()
@@ -12,6 +12,7 @@ application.add(admin.ConfigureClient())
 application.add(admin.SetValue())
 application.add(admin.AddValue())
 application.add(admin.InstallCommand())
+application.add(admin.UninstallCommand())
 application.add(admin.BumpVersion())
 
 # package
@@ -19,5 +20,5 @@ application.add(packaging.CreatePackage())
 application.add(packaging.UploadPackage())
 
 
-if __name__ == '__main__':
+def run():
     application.run()

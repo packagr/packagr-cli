@@ -56,7 +56,9 @@ This file supports the same options that `setup.py` does. You can set/add values
 
 ``packagr add Authors "somebody else <me@example.com>"``: Adds a new author to the authors array (works with any array setting)
 
-!! ``packagr install <some-package>``: Installs `some-package` with pip and adds it to the dependencies. Will add packagr repo as `--extra-index-url`
+``packagr install <some-package>``: Installs `some-package` with pip and adds it to the dependencies. Will add packagr repo as `--extra-index-url`
+
+!! ``packagr uninstall <some-package>``: Opposite of the above
 
 ``packagr bump [0.2.0] [--minor|--major]``: Increases the package version
 

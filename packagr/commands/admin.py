@@ -1,10 +1,7 @@
-from commands.base import Command
+from packagr.commands.base import Command
 import os
 import toml
-
-
-class PackagrCLIException(Exception):
-    pass
+import subprocess
 
 
 class ConfigureClient(Command):
@@ -32,9 +29,9 @@ class ConfigureClient(Command):
         config_path = os.path.expanduser('~')
 
         content = {
-            # 'url': f'https://api.packagr.app/{hash_id}/',
-            'url': f'http://localhost:8000/{hash_id}/',
+            'url': f'https://api.packagr.app/{hash_id}/',
             'email': email,
+            'hash-id': hash_id,
             'password': password
         }
 
@@ -94,23 +91,66 @@ class InstallCommand(Command):
     Installs a package and updates the config
 
     install
-        {name? : The name of the package to install}
+        {packages* : The packages to install}
+        {--i|ignore-errors : Continue to the next file even if errors are encountered}
     """
 
     def handle(self):
-        """
-        1. Looks for the given package on Packagr repo
-        2. If not found, looks for it on PYPI
-        3. Installs it
-        4. Adds to config
+        packages = self.argument('packages')
+        ignore_errors = self.option('ignore-errors')
 
-        TODO: Implement steps 1-3
-        """
+        config = self.get_global_config()
+        url = f'https://{config["email"]}:{config["password"]}@api.packagr.app/{config["hash-id"]}/'
+
+        for package in packages:
+            status = subprocess.call(['pip', 'install', package, '--extra-index-url', url, '-q'])
+
+            if status == 0:
+                config = self.get_package_config()
+                if config:
+                    self.append(config, 'install_requires', package)
+
+                    self.line(f'<info>Installed package {package} and added it to the config</info>')
+            else:
+                self.line(f'<error>Error installing package {package}.</error>')
+                if not ignore_errors:
+                    self.line('<error>Stopping process</error>')
+                    return
+
+
+class UninstallCommand(Command):
+    """
+    Uninstalls a package and removes it from the config
+
+    uninstall
+        {packages* : The packages to uninstall}
+        {--i|ignore-errors : Continue to the next file even if errors are encountered}
+        {--y|skip-prompts : Skip uninstall prompts}
+    """
+    def handle(self):
+        packages = self.argument('packages')
+
+        ignore_errors = self.option('ignore-errors')
+        skip_prompts = self.option('skip-prompts')
+
         config = self.get_package_config()
-        if config:
-            self.append(config, 'install_requires', self.argument('name'))
 
-            self.line('added package to config')
+        for package in packages:
+            commands = ['pip', 'uninstall', package,]
+            if skip_prompts:
+                commands.append('-y')
+            status = subprocess.call(commands)
+            if status == 0:
+                removed = self.remove(config, 'install_requires', package)
+                if not removed:
+                    return
+                self.line(f'<info>Successfully uninstalled {package}</info>')
+
+            else:
+                self.line(f'<error>Error uninstalling package {package}.</error>')
+                if not ignore_errors:
+                    self.line('<error>Stopping process</error>')
+                    return
 
 
 class BumpVersion(Command):
