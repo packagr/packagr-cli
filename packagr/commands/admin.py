@@ -1,5 +1,6 @@
 from cleo import Command
 import os
+import toml
 
 
 class ConfigureClient(Command):
@@ -17,7 +18,6 @@ class ConfigureClient(Command):
         Creates a packagr config file at the root directory
 
         TODO: Need to update this to actually validate the hash_id and api_access_key before setting these values
-        TODO: Update this to use a better method for writing TOML
         """
 
         hash_id: str = self.argument('hash-id')
@@ -25,12 +25,13 @@ class ConfigureClient(Command):
 
         config_path = os.path.expanduser('~')
 
+        content = {
+            'url': 'https://api.packagr.app/%s/' % hash_id,
+            'api_access_key': api_access_key
+        }
+
         with open(os.path.join(config_path, 'packagr_conf.toml'), 'w') as f:
-            content: str = f"""[packagr.config]
-url = "https://api.packagr.app/{hash_id}/"
-api_access_key = "{api_access_key}"
-"""
-            f.write(content)
+            f.write(toml.dumps(content))
 
         self.line('Successfully updated config file')
 
@@ -49,21 +50,22 @@ class CreatePackage(Command):
 
         Checks if file exists first, prompts to replace
 
-        TODO: Update this to use a better method for writing TOML
+        TODO: add --overwrite flag
+
         """
         name = self.argument('name')
 
-        template = f"""[packagr.package]
-name = '{name}'
-version = '0.1.0'
-readme = 'README.rst'"""
+        template = {
+            'name': name,
+            'version': '0.1.0',
+        }
 
         if os.path.exists('packagr.toml'):
             if not self.confirm('A package already exists at this location. Overwrite?', False, '(?i)^(y|j)'):
                 return
 
         with open('packagr.toml', 'w') as f:
-            f.write(template)
+            f.write(toml.dumps(template))
 
         response = 'Created config file `packagr.toml`'
 

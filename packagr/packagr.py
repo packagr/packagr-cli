@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from cleo import Application
-from commands import test, admin
+from commands import admin
 
 
 application = Application()
