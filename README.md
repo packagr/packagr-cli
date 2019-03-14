@@ -13,7 +13,7 @@ available through the CLI, with the exception of user and billing management
 ## Installation
 
 ```
-pip install packagr
+pip install packagr-cli
 ```
 
 ## Quick start
