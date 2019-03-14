@@ -7,7 +7,6 @@ before_install:
 install:
   - poetry install
 
-
 before_deploy:
   - pip install --upgrade pip==18.1
   - pip install poetry
