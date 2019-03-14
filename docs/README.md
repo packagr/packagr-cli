@@ -22,8 +22,8 @@ packagr [command] [args]
 
 ## Commands
 
-
-### `packagr configure <hash-id> <email> <password>`
+### Configure
+`packagr configure <hash-id> <email> <password>`
 
 You should call the `configure` command straight after you install Packagr CLI. This command will store your credentials
 to a config file, `packagr_conf.toml`, that is referenced by many other of the Packagr CLI commands, and removes the
@@ -46,7 +46,8 @@ https://api.packagr.app/u893rj/
 
 The last part of this url is your `hash-id`
 
-### `packagr init <name> [--overwrite]`
+### Init 
+`packagr init <name> [--overwrite]`
 
 In order to create a Package, Packagr needs a file called `packagr.toml`, which contains information about your package.
 The `package init` command creates this file for you
@@ -65,7 +66,8 @@ in the config file manually.
 - `--overwrite` (Optional): If you try to run `packagr init` in a folder where a `packagr.toml` file already exists, you
   will be prompted to confirm that you want to overwrite the existing file. Passing this argument overrides the prompt
 
-### `packagr set <key> <value>`
+### Set
+`packagr set <key> <value>`
 
 Once your `packagr.toml` file has been created, you can use the `set` command to set values within it. For example, if 
 you wanted to add a description to the config, you could enter the following command:
@@ -85,7 +87,8 @@ If you enter a duplicate key, you will be prompted to confirm that you want to o
 - `key`: the setting key
 - `value`: the setting value
 
-### `packagr add <key> <value>`
+### Add
+`packagr add <key> <value>`
 
 The `add` command works in a similar way to the `set` command, but it's purpose is to append data to arrays already 
 defined in the config. For example, if your config already looks like this:
@@ -108,7 +111,8 @@ The `add` command will also add a value to a key that doesn't exist.
 - `value`: the setting value
 
 
-### `packagr install <some-package>`
+### Install
+`packagr install <some-package>`
 
 The `install` command works in a similar way to `pip install` - it installs a package using your current environment's
 `pip` installation. However, this command will also look for packages in your Packagr repository, as well as in the 
@@ -121,7 +125,8 @@ section
 - `--ignore-errors`: In case of multiple packages, passing this argument means that Packagr will continue attempting to
   install the remaining packages on the list in the case that one fails
 
-### `packagr uninstall <some-package>`
+### Uninstall
+`packagr uninstall <some-package>`
 
 
 This command does the opposite of `install` - it uninstalls a given package and removes it from the dependencies list.
@@ -132,7 +137,8 @@ This command does the opposite of `install` - it uninstalls a given package and 
 - `--ignore-errors`: In case of multiple packages, passing this argument means that Packagr will continue attempting to
   
   
-### `packagr bump <version> [--minor] [--major]`
+### Bump
+`packagr bump <version> [--minor] [--major]`
 
 The `bump` command increases the version number of your package. Used without arguments, e.g. `packagr bump`, it 
 increases the version number, e.g. `1.0.0` becomes `1.0.0`. Using the `--minor` argument increases the minor version
@@ -148,17 +154,10 @@ instead
 - `version` (optional): the version number to set. Not compatible with any other argument
 -  `--minor` (optional): Increase the minor version number
 -  `--major` (optional): Increase the major version number
-  
-###  **NOT YET IMPLEMENTED**
-
-Once this command is implemented, it will read the content of `readme-file` and set it as the `Descripton` value in 
-your package
-
-#### Arguments
-- `readme`: a file path to a readme file - should be in markdown format
 
 
-### `packagr package`
+### Package
+`packagr package`
 
 Creates `sdist` and/or `wheel` packages based on your config file. Using the command without arguments will create a 
 package in both formats. Using `--no-wheel` or `no-sdist` will prevent creation of specific formats
@@ -168,7 +167,8 @@ package in both formats. Using `--no-wheel` or `no-sdist` will prevent creation 
 - `--no-wheel`: Don't build a wheel
 
 
-### `packagr upload [--ignore-409]`
+### Upload
+`packagr upload [--ignore-409]`
 
 This command will push your package to Packagr. If you are uploading many packages at once, you may opt to use the 
 `--ignore-409` argument, which will skip to the next package if encountering a 409 error (conflict for URL). In future,
