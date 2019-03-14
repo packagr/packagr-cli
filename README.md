@@ -47,9 +47,9 @@ authors = ["Chris Davies <chris@packagr.app>"]
 ### Admin commands
 ``packagr create <my-package>``: Creates a skeleton packgr.toml file at the current location
 
-``packagr set.foo bar``: Sets the value of `foo` to `bar` in the `packagr.conf` file
+``packagr set foo bar``: Sets the value of `foo` to `bar` in the `packagr.conf` file
 
-``packagr add.authors "somebody else <me@example.com"``: Adds a new author to the authors array (works with any array setting)
+``packagr add authors "somebody else <me@example.com"``: Adds a new author to the authors array (works with any array setting)
 
 ``packagr install <some-package>``: Installs `some-package` with pip and adds it to the dependencies. Will add packagr repo as `--extra-index-url`
 
