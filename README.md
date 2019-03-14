@@ -4,7 +4,7 @@ A CLI for https://www.packagr.app
 
 ## Introduction
 
-> THIS PROJECT IS NOT YET PRODUCTION-READY!
+> THIS PROJECT IS STILL IN BETA!
 
 This repository allows you to fully manage your Packagr account from an intuitive CLI. All Packagr functions are
 available through the CLI, with the exception of user and billing management
@@ -16,72 +16,70 @@ available through the CLI, with the exception of user and billing management
 pip install packagr
 ```
 
-## Usage
+## Quick start
+
+### Step 1 - configure the client
+
+> In order to use this tool, you first need to sign up for a [Packagr](https://www.packagr.app) account, and get your 
+unique hash id. You'll need your hash id and the email address and password you used to sign up to Packagr in order to 
+configure the client:
 
 ```
 packagr configure <packagr-hash-id> <email> <password>
 ```
 
-The above verifies your credentials then creates a file at ~/packagr_conf.toml and stores those credentials there. Most
-other commands will need to reference these credentials in order to work
+The above verifies your credentials then creates a file at ~/packagr_conf.toml and stores your credentials there. Many
+other commands will need to reference these credentials in order to work.
 
-## Project setup
+You should **NOT** commit this file to version control
 
-Packagr relies on a file called `packagr.toml` to work - this file contains information about your specific package that
-the CLI references in order to operate correctly. 
+### Step 2 - create a project
 
-You can create a basic `packagr.toml` with the following command:
+Once you've installed Packagr, you can initiate a new project with the following command:
 
 ```bash
-packagr init <my-package>
+packagr init my_package
+```
+
+This will create a file called `packagr.toml`, which contains your project configuration, and also a folder called 
+`my_package`, where you should put all your code
+
+### Step 3 - add some code
+
+Let's add a super simple file called `hello.py` to our `my_package` folder:
+
+```python
+def hello(*args, **kwargs):
+    return 'Hello, world!'
+```
+
+### Step 4 - build and publish to Packagr
+
+Use this command to build your package:
+
+```bash
+packagr package
+```
+
+And this one to publish it to Packagr:
+
+```bash
+packagr upload
+```
+
+Your package has now been pushed to Packagr! You'll be able to install it using the following command, as usual:
+```
+pip install --extra-index-url https://api.packagr.app/my_hash_id/
+```
+
+Or alternatively (and more simply), by using the Packagr CLI:
+
+```bash
+packagr add my_package
 ``` 
 
-The file looks something like this: 
-```
-name = 'my-package'
-version = '0.1.0'
-```
+> Note that using `packagr add` will add your package as a dependency in your `packagr.toml` file
 
-This file supports the same options that `setup.py` does. You can set/add values in this file using the
-`packagr set` and `packagr add` commands
-
-
-## Commands
-
-### Admin commands
-
-``packagr init <my-package>``: Creates a skeleton packgr.toml file at the current location
-
-``packagr set foo bar``: Sets the value of `foo` to `bar` in the `packagr.conf` file
-
-``packagr add Authors "somebody else <me@example.com>"``: Adds a new author to the authors array (works with any array setting)
-
-``packagr install <some-package>``: Installs `some-package` with pip and adds it to the dependencies. Will add packagr repo as `--extra-index-url`
-
-!! ``packagr uninstall <some-package>``: Opposite of the above
-
-``packagr bump [0.2.0] [--minor|--major]``: Increases the package version
-
-!! ``packagr set-readme README.md``: Copies the content of `README.md` to the `long_description` value of the config
-
-### Packaging commands
-
-``packagr package``: Creates a Python package. Defaults to `sdist` and `wheel` packages
-
-``packagr upload [--ignore-409]``: Uploads any built packages to Packagr. `--ignore-409` means that 409 errors are ignored
-
-### Access tokens
-
-``packagr token create <my-package> <email> [--read-only]``: Creates an access token for a package
-
-``packagr token delete <my-package> <email> [--no-warnings]``: Deletes an access token
-
-## Public access
-
-``packagr set-public <my-package>``: Sets a package as `public`
-
-``packagr set-private <my-package>``: Sets a package as `private`
-
-
-
+The Packager CLI also supports many other features, including creation/removal of access tokens and marking packages as
+public/private. For the full set of available commands, please refer to the [docs](https://packagr.github.io/packagr-cli/)
 
