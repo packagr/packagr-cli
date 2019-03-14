@@ -1,11 +1,8 @@
 language: python
 python: "3.6"
 
-before_install:
-  - pip install poetry
-
 install:
-  - poetry install
+  - echo "hello"
 
 before_deploy:
   - pip install --upgrade pip==18.1
@@ -18,4 +15,4 @@ deploy:
   script: poetry publish
   skip_cleanup: true
   on:
-    all_branches: true
+    branch: master
