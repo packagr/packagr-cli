@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "packagr-cli"
+packages = [
+    { include = "packagr" },
+]
+version = "0.1.0"
+description = "A CLI for https://www.packagr.app"
+readme = 'README.rst'
+authors = ["Chris Davies <chris@packagr.app>"]
+
+[tool.poetry.dependencies]
+python = "^3.7.2"
+
+[tool.poetry.dev-dependencies]
+pytest = "^3.0"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
