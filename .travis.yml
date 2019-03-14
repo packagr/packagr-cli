@@ -10,7 +10,7 @@ script:
 before_deploy:
   - pip install --upgrade pip==18.1
   - pip install poetry
-  - poetry config http-basic.pypi $PYPI_USER $PYPI_PASS
+  - poetry config http-basic.pypi $PYPI_USER $PYPI_PASSWORD
   - poetry build
 
 deploy:
