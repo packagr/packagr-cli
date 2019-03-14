@@ -1,6 +1,13 @@
 language: python
 python: "3.6"
 
+before_install:
+  - pip install poetry
+
+install:
+  - poetry install
+
+
 before_deploy:
   - pip install --upgrade pip==18.1
   - pip install poetry
