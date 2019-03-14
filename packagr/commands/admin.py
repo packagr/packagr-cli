@@ -42,6 +42,8 @@ class CreatePackage(Command):
 
     create
         {name? : The name of the package}
+        {--o|overwrite : Overwrite existing without prompt}
+
     """
 
     def handle(self):
@@ -50,17 +52,16 @@ class CreatePackage(Command):
 
         Checks if file exists first, prompts to replace
 
-        TODO: add --overwrite flag
-
         """
         name = self.argument('name')
+        overwrite = self.option('overwrite')
 
         template = {
             'name': name,
             'version': '0.1.0',
         }
 
-        if os.path.exists('packagr.toml'):
+        if os.path.exists('packagr.toml') and not overwrite:
             if not self.confirm('A package already exists at this location. Overwrite?', False, '(?i)^(y|j)'):
                 return
 
