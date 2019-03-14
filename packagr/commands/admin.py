@@ -1,54 +1,10 @@
-from cleo import Command as BaseCommand
+from commands.base import Command
 import os
 import toml
-from utilities import (
-    get_package_config, write_package_content
-)
-from typing import Any
 
 
 class PackagrCLIException(Exception):
     pass
-
-
-class Command(BaseCommand):
-    def get_package_config(self):
-        config = get_package_config()
-
-        if not config:
-            self.line('<error>'
-                      'Unable to perform this action because no package exists at the current location. '
-                      'Run `packagr create` first'
-                      '</error>')
-
-        return config
-
-    @staticmethod
-    def write_package_content(config: dict) -> None:
-        write_package_content(config)
-
-    def update_config(self, config, **changes):
-        for key, value in changes.items():
-            config[key] = value
-        self.write_package_content(config)
-
-    def append(self, config: dict, key: str, value: Any) -> True:
-        """
-        Adds a value to an array, if it isn't already in there
-        """
-        existing = config.get(key, [])
-
-        try:
-            assert isinstance(existing, list)
-        except AssertionError:
-            self.line(f'<error>Cannot add to value {key} because it is not an array</error>')
-            return
-
-        if value not in existing:
-            existing.append(value)
-
-        self.update_config(config, **{key: existing})
-        return True
 
 
 class ConfigureClient(Command):
@@ -57,7 +13,8 @@ class ConfigureClient(Command):
 
     configure
         {hash-id? : TYour Packagr account hash ID}
-        {api-access-key? : Your API access key}
+        {email? : Your packagr email address}
+        {password? : Your packagr password}
 
     """
 
@@ -69,13 +26,16 @@ class ConfigureClient(Command):
         """
 
         hash_id: str = self.argument('hash-id')
-        api_access_key: str = self.argument('api-access-key')
+        email: str = self.argument('email')
+        password: str = self.argument('password')
 
         config_path = os.path.expanduser('~')
 
         content = {
-            'url': f'https://api.packagr.app/{hash_id}/',
-            'api_access_key': api_access_key
+            # 'url': f'https://api.packagr.app/{hash_id}/',
+            'url': f'http://localhost:8000/{hash_id}/',
+            'email': email,
+            'password': password
         }
 
         with open(os.path.join(config_path, 'packagr_conf.toml'), 'w') as f:
@@ -209,8 +169,8 @@ class CreatePackage(Command):
     """
     Creates a new Packagr config file
 
-    create
-        {name? : The name of the package}
+    init
+        {name? : The name of the package - default to the current folder name if not provided}
         {--o|overwrite : Overwrite existing without prompt}
 
     """
@@ -223,12 +183,17 @@ class CreatePackage(Command):
 
         """
         name = self.argument('name')
+        if not name:
+            name = os.path.split(os.getcwd())[-1]
         overwrite = self.option('overwrite')
 
         template = {
             'name': name,
             'version': '0.1.0',
+            'packages': [name]
         }
+        if not os.path.exists(name):
+            os.makedirs(name)
 
         if os.path.exists('packagr.toml') and not overwrite:
             if not self.confirm('A package already exists at this location. Overwrite?', False, '(?i)^(y|j)'):

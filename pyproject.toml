@@ -5,13 +5,15 @@ packages = [
 ]
 version = "0.1.0"
 description = "A CLI for https://www.packagr.app"
-readme = 'README.rst'
+readme = 'README.md'
 authors = ["Chris Davies <chris@packagr.app>"]
 
 [tool.poetry.dependencies]
 python = "^3.7.2"
 cleo = "^0.7.2"
 toml = "^0.10.0"
+wheel = "^0.33.1"
+requests = "^2.21"
 
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"
