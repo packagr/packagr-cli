@@ -1,12 +1,14 @@
 import toml
+from typing import Any, MutableMapping
 
 
-def get_package_config(path: str = 'packagr.toml') -> dict:
+def get_package_config(path: str = 'packagr.toml') -> MutableMapping:
     """
     Returns the content of the package config file as a dict
     """
     with open(path, 'r') as f:
-        return toml.loads(f.read())
+        config: MutableMapping[str, Any] = toml.loads(f.read())
+        return config
 
 
 def write_package_content(config: dict, path: str = 'packagr.toml') -> None:

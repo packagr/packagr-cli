@@ -1,25 +1,38 @@
 from cleo import Command as BaseCommand
 from packagr.utilities import get_package_config, write_package_content
-from typing import Any
+from typing import Any, Optional, MutableMapping, Union
+
 import os
+import requests
 
 
 class Command(BaseCommand):
-    def check_configuration(self):
+    def check_configuration(self, hash_id: str, email: str, password: str) -> bool:
         """
         Check that a global config has been set with the `packagr configure` command
-
-        TODO: implement this
         """
+        post = {
+            'email'   : email,
+            'password': password
+        }
+        response = requests.post('https://api.packagr.app/api/auth/login/', post)
+        try:
+            assert response.status_code == 200
+            assert response.json().get('profile', {}).get('hash_id') == hash_id
+            return True
+        except AssertionError:
+            self.line('<error>Invalid credentials</error>')
 
-    def get_global_config(self):
+        return False
+
+    def get_global_config(self) -> Optional[MutableMapping[str, Any]]:
         """
         Returns the content of the global config file
 
         """
         return self.get_package_config(path=os.path.expanduser('~/packagr_conf.toml'))
 
-    def get_package_config(self, path: str = 'packagr.toml'):
+    def get_package_config(self, path: str = 'packagr.toml') -> Optional[MutableMapping[str, Any]]:
         config = get_package_config(path=path)
 
         if not config:
@@ -39,7 +52,12 @@ class Command(BaseCommand):
             config[key] = value
         self.write_package_content(config, path=path)
 
-    def append(self, config: dict, key: str, value: Any, path: str = 'packagr.toml') -> True:
+    def append(self,
+               config: Union[dict, MutableMapping[str, Any]],
+               key: str,
+               value: Any,
+               path: str = 'packagr.toml'
+               ) -> bool:
         """
         Adds a value to an array, if it isn't already in there
         """
@@ -49,15 +67,22 @@ class Command(BaseCommand):
             assert isinstance(existing, list)
         except AssertionError:
             self.line(f'<error>Cannot add to value {key} because it is not an array</error>')
-            return
+            return False
 
         if value not in existing:
             existing.append(value)
 
-        self.update_config(config, **{key: existing}, path=path)
+        self.update_config(config=config, path=path, **{key: existing},)
         return True
 
-    def remove(self, config: dict, key: str, value: Any, path: str = 'packagr.toml') -> True:
+    def remove(self,
+               config: Union[dict, MutableMapping[str, Any]],
+               key: str,
+               value: Any,
+               path: str = 'packagr.toml') -> bool:
+        """
+        Removes `n item from an array in the config
+        """
         array = config.get(key, [])
 
         try:
@@ -65,11 +90,11 @@ class Command(BaseCommand):
 
         except AssertionError:
             self.line(f'<error>Cannot remove item because the property is not an arrary</error>')
-            return
+            return False
 
         try:
             array.remove(value)
         except ValueError:
-            return
-        self.update_config(config, **{key: array}, path=path)
+            return False
+        self.update_config(config=config, path=path, **{key: array})
         return True

@@ -9,36 +9,35 @@ class ConfigureClient(Command):
     Configure the CLI for your Packagr account
 
     configure
-        {hash-id? : TYour Packagr account hash ID}
-        {email? : Your packagr email address}
-        {password? : Your packagr password}
+        {hash-id : TYour Packagr account hash ID}
+        {email : Your packagr email address}
+        {password : Your packagr password}
 
     """
 
-    def handle(self):
+    def handle(self) -> None:
         """
         Creates a packagr config file at the root directory
-
-        TODO: Need to update this to actually validate the hash_id and api_access_key before setting these values
         """
 
         hash_id: str = self.argument('hash-id')
         email: str = self.argument('email')
         password: str = self.argument('password')
 
-        config_path = os.path.expanduser('~')
+        if self.check_configuration(hash_id, email, password):
+            config_path = os.path.expanduser('~')
 
-        content = {
-            'url': f'https://api.packagr.app/{hash_id}/',
-            'email': email,
-            'hash-id': hash_id,
-            'password': password
-        }
+            content = {
+                'url': f'https://api.packagr.app/{hash_id}/',
+                'email': email,
+                'hash-id': hash_id,
+                'password': password
+            }
 
-        with open(os.path.join(config_path, 'packagr_conf.toml'), 'w') as f:
-            f.write(toml.dumps(content))
+            with open(os.path.join(config_path, 'packagr_conf.toml'), 'w') as f:
+                f.write(toml.dumps(content))
 
-        self.line('Successfully updated config file')
+            self.line('<info>Successfully updated config file</info>')
 
 
 class SetValue(Command):
@@ -49,7 +48,7 @@ class SetValue(Command):
         {key? : The property to update}
         {value? : The new value}
     """
-    def handle(self):
+    def handle(self) -> None:
         key, value = self.argument('key'), self.argument('value')
 
         config = self.get_package_config()
@@ -74,7 +73,7 @@ class AddValue(Command):
         {key? : The property to update}
         {value? : The new value}
     """
-    def handle(self):
+    def handle(self) -> None:
         key = self.argument('key')
         value = self.argument('value')
 
@@ -95,27 +94,36 @@ class InstallCommand(Command):
         {--i|ignore-errors : Continue to the next file even if errors are encountered}
     """
 
-    def handle(self):
+    def handle(self) -> None:
         packages = self.argument('packages')
         ignore_errors = self.option('ignore-errors')
 
         config = self.get_global_config()
-        url = f'https://{config["email"]}:{config["password"]}@api.packagr.app/{config["hash-id"]}/'
 
-        for package in packages:
-            status = subprocess.call(['pip', 'install', package, '--extra-index-url', url, '-q'])
+        if config:
+            if self.check_configuration(config['hash_id'], config['email'], config['password']):
+                url = f'https://{config["email"]}:{config["password"]}@api.packagr.app/{config["hash-id"]}/'
 
-            if status == 0:
-                config = self.get_package_config()
-                if config:
-                    self.append(config, 'install_requires', package)
+                for package in packages:
+                    status = subprocess.call(['pip', 'install', package, '--extra-index-url', url, '-q'])
 
-                    self.line(f'<info>Installed package {package} and added it to the config</info>')
+                    if status == 0:
+                        config = self.get_package_config()
+                        if config:
+                            self.append(config, 'install_requires', package)
+
+                            self.line(f'<info>Installed package {package} and added it to the config</info>')
+                    else:
+                        self.line(f'<error>Error installing package {package}.</error>')
+                        if not ignore_errors:
+                            self.line('<error>Stopping process</error>')
+                            return
+
             else:
-                self.line(f'<error>Error installing package {package}.</error>')
-                if not ignore_errors:
-                    self.line('<error>Stopping process</error>')
-                    return
+                self.line('<error>Packagr credentials are invalid</error>')
+
+        else:
+            self.line('<error>Global config not found</error>')
 
 
 class UninstallCommand(Command):
@@ -127,7 +135,7 @@ class UninstallCommand(Command):
         {--i|ignore-errors : Continue to the next file even if errors are encountered}
         {--y|skip-prompts : Skip uninstall prompts}
     """
-    def handle(self):
+    def handle(self) -> None:
         packages = self.argument('packages')
 
         ignore_errors = self.option('ignore-errors')
@@ -135,22 +143,25 @@ class UninstallCommand(Command):
 
         config = self.get_package_config()
 
-        for package in packages:
-            commands = ['pip', 'uninstall', package,]
-            if skip_prompts:
-                commands.append('-y')
-            status = subprocess.call(commands)
-            if status == 0:
-                removed = self.remove(config, 'install_requires', package)
-                if not removed:
-                    return
-                self.line(f'<info>Successfully uninstalled {package}</info>')
+        if config:
+            for package in packages:
+                commands = ['pip', 'uninstall', package,]
+                if skip_prompts:
+                    commands.append('-y')
+                status = subprocess.call(commands)
+                if status == 0:
+                    removed = self.remove(config, 'install_requires', package)
+                    if not removed:
+                        return
+                    self.line(f'<info>Successfully uninstalled {package}</info>')
 
-            else:
-                self.line(f'<error>Error uninstalling package {package}.</error>')
-                if not ignore_errors:
-                    self.line('<error>Stopping process</error>')
-                    return
+                else:
+                    self.line(f'<error>Error uninstalling package {package}.</error>')
+                    if not ignore_errors:
+                        self.line('<error>Stopping process</error>')
+                        return
+        else:
+            self.line('<error>Package config not found</error>')
 
 
 class BumpVersion(Command):
@@ -163,7 +174,7 @@ class BumpVersion(Command):
         {--i|minor : Bumps the minor version e.g. 1.0.0 > 1.1.0}
     """
 
-    def handle(self):
+    def handle(self) -> None:
         config = self.get_package_config()
         if not config:
             return
@@ -215,7 +226,7 @@ class CreatePackage(Command):
 
     """
 
-    def handle(self):
+    def handle(self) -> None:
         """
         Creates a file called `packagr.toml` in the current directory
 

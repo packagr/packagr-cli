@@ -2,16 +2,15 @@ language: python
 python: "3.6"
 
 install:
-  - echo "hello"
-
-script:
-  - echo "hello"
-
-before_deploy:
   - pip install --upgrade pip==18.1
   - pip install poetry
+  - poetry install
+
+script:
+  - mypy packagr --ignore-missing-imports
+
+before_deploy:
   - poetry config http-basic.pypi $PYPI_USER $PYPI_PASSWORD
-  - poetry build
 
 deploy:
   provider: script
