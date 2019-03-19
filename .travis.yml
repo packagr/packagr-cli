@@ -1,9 +1,11 @@
 language: python
 python: "3.6"
 
-install:
+before_install:
   - pip install --upgrade pip==18.1
-  - curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python
+  - pip install poetry
+
+install:
   - poetry install
 
 script:
