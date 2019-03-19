@@ -1,3 +1,5 @@
+[![Coverage Status](https://coveralls.io/repos/github/packagr/packagr-cli/badge.svg)](https://coveralls.io/github/packagr/packagr-cli)
+
 # Packagr CLI
 
 A CLI for https://www.packagr.app
