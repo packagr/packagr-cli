@@ -3,7 +3,7 @@ python: "3.6"
 
 install:
   - pip install --upgrade pip==18.1
-  - pip install poetry
+  - curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python
   - poetry install
 
 script:
@@ -11,6 +11,7 @@ script:
 
 before_deploy:
   - poetry config http-basic.pypi $PYPI_USER $PYPI_PASSWORD
+  - poetry build
 
 deploy:
   provider: script
