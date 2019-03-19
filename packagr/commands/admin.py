@@ -109,9 +109,10 @@ class RemoveValue(Command):
         else:
             self.line('<error>No package found - Run `packagr init` first</error>')
 
+
 class InstallCommand(Command):
     """
-    Installs a package and updates the config
+    Installs a package and updates the project config (if one exists in the current folder)
 
     install
         {packages* : The packages to install}
@@ -134,9 +135,10 @@ class InstallCommand(Command):
                     if status == 0:
                         config = self.get_package_config()
                         if config:
-                            self.append(config, 'install_requires', package)
-
-                            self.line(f'<info>Installed package {package} and added it to the config</info>')
+                            if self.append(config, 'install_requires', package):
+                                self.line(f'<info>Installed package {package} and added it to the config</info>')
+                            else:
+                                self.line(f'<info>Package {package} was installed.</info>')
                     else:
                         self.line(f'<error>Error installing package {package}.</error>')
                         if not ignore_errors:
