@@ -17,7 +17,6 @@ requests = "^2.21"
 mypy = "^0.670.0"
 mock = "^2.0"
 coverage = "^4.5"
-coveralls = "^1.6"
 
 [tool.poetry.scripts]
 packagr = "packagr:run"
@@ -25,6 +24,8 @@ packagr = "packagr:run"
 [tool.poetry.dev-dependencies]
 cleo = "^0.7.2"
 pytest = "^3.0"
+coveralls = "^1.6"
+
 
 [build-system]
 requires = ["poetry>=0.12"]
