@@ -11,6 +11,8 @@ install:
 
 script:
   - mypy packagr --ignore-missing-imports
+  - coverage run tests/test_packagr_cli.py
+  - coveralls
 
 before_deploy:
   - poetry config http-basic.pypi $PYPI_USER $PYPI_PASSWORD

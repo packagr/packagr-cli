@@ -1,9 +1,8 @@
 from cleo import Command as BaseCommand
-from packagr.utilities import get_package_config, write_package_content
+from packagr import utilities
 from typing import Any, Optional, MutableMapping, Union
 
 import os
-import requests
 
 
 class Command(BaseCommand):
@@ -11,15 +10,8 @@ class Command(BaseCommand):
         """
         Check that a global config has been set with the `packagr configure` command
         """
-        post = {
-            'email'   : email,
-            'password': password
-        }
-        response = requests.post('https://api.packagr.app/api/auth/login/', post)
         try:
-            assert response.status_code == 200
-            assert response.json().get('profile', {}).get('hash_id') == hash_id
-            return True
+            return utilities.check_configuration(hash_id, email, password)
         except AssertionError:
             self.line('<error>Invalid credentials</error>')
 
@@ -33,19 +25,19 @@ class Command(BaseCommand):
         return self.get_package_config(path=os.path.expanduser('~/packagr_conf.toml'))
 
     def get_package_config(self, path: str = 'packagr.toml') -> Optional[MutableMapping[str, Any]]:
-        config = get_package_config(path=path)
+        config = utilities.get_package_config(path=path)
 
         if not config:
             self.line('<error>'
                       'Unable to perform this action because no package exists at the current location. '
-                      'Run `packagr create` first'
+                      'Run `packagr init` first'
                       '</error>')
 
         return config
 
     @staticmethod
     def write_package_content(config: dict, path: str = 'packagr.toml') -> None:
-        write_package_content(config, path=path)
+        utilities.write_package_content(config, path=path)
 
     def update_config(self, config, path: str = 'packagr.toml', **changes):
         for key, value in changes.items():
@@ -89,12 +81,13 @@ class Command(BaseCommand):
             assert isinstance(array, list)
 
         except AssertionError:
-            self.line(f'<error>Cannot remove item because the property is not an arrary</error>')
+            self.line(f'<error>Cannot remove item because the property is not an array</error>')
             return False
 
         try:
             array.remove(value)
         except ValueError:
+            self.line(f'<error>Cannot remove item because the property {key} does not exist</error>')
             return False
         self.update_config(config=config, path=path, **{key: array})
         return True

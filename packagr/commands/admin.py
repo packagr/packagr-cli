@@ -59,10 +59,13 @@ class SetValue(Command):
                 new_type = type(value)
                 if not self.confirm(f'You are about to replace an array with a {new_type.__name__}. Continue?', False,
                                     '(?i)^(y|j)'):
+                    self.line('<error>Operation cancelled by user</error>')
                     return
 
             self.update_config(config, **{key: value})
             self.line(f'Successfully added key "{key}" with value "{value}"')
+        else:
+            self.line('<error>No package found - Run `packagr init` first</error>')
 
 
 class AddValue(Command):
@@ -78,12 +81,33 @@ class AddValue(Command):
         value = self.argument('value')
 
         config = self.get_package_config()
-        if not config:
-            return
+        if config:
+            if self.append(config, key, value):
+                self.line(f'Successfully added key "{key}" with value "{value}"')
 
-        if self.append(config, key, value):
-            self.line(f'Successfully added key "{key}" with value "{value}"')
+        else:
+            self.line('<error>No package found - Run `packagr init` first</error>')
 
+
+class RemoveValue(Command):
+    """
+    Appends a value to an existing array in the config
+
+    remove
+        {key? : The property to update}
+        {value? : The value to remove}
+    """
+    def handle(self) -> None:
+        key = self.argument('key')
+        value = self.argument('value')
+
+        config = self.get_package_config()
+        if config:
+            if self.remove(config, key, value):
+                self.line(f'Successfully removed value {value} from array "{key}"')
+
+        else:
+            self.line('<error>No package found - Run `packagr init` first</error>')
 
 class InstallCommand(Command):
     """
@@ -101,7 +125,7 @@ class InstallCommand(Command):
         config = self.get_global_config()
 
         if config:
-            if self.check_configuration(config['hash_id'], config['email'], config['password']):
+            if self.check_configuration(config['hash-id'], config['email'], config['password']):
                 url = f'https://{config["email"]}:{config["password"]}@api.packagr.app/{config["hash-id"]}/'
 
                 for package in packages:
@@ -150,9 +174,7 @@ class UninstallCommand(Command):
                     commands.append('-y')
                 status = subprocess.call(commands)
                 if status == 0:
-                    removed = self.remove(config, 'install_requires', package)
-                    if not removed:
-                        return
+                    self.remove(config, 'install_requires', package)
                     self.line(f'<info>Successfully uninstalled {package}</info>')
 
                 else:
@@ -161,7 +183,7 @@ class UninstallCommand(Command):
                         self.line('<error>Stopping process</error>')
                         return
         else:
-            self.line('<error>Package config not found</error>')
+            self.line('<error>No package found - Run `packagr init` first</error>')
 
 
 class BumpVersion(Command):
@@ -176,44 +198,46 @@ class BumpVersion(Command):
 
     def handle(self) -> None:
         config = self.get_package_config()
-        if not config:
-            return
 
-        version = config.get('version', '0.1.0')
-        version_opt = self.argument('version')
-        major_opt, minor_opt = self.option('major'), self.option('minor')
+        if config:
+            version = config.get('version', '0.1.0')
+            version_opt = self.argument('version')
+            major_opt, minor_opt = self.option('major'), self.option('minor')
 
-        if version_opt:
-            if major_opt or minor_opt:
-                self.line('<error>'
-                          'Cannot use the version argument with either the --minor or --major arguments'
-                          '</error>')
-                return
+            if version_opt:
+                if major_opt or minor_opt:
+                    self.line('<error>'
+                              'Cannot use the version argument with either the --minor or --major arguments'
+                              '</error>')
+                    return
 
-            new_version = version_opt
+                new_version = version_opt
+
+            else:
+                try:
+                    major, minor, bugfix = version.split('.')
+                except ValueError:
+                    self.line('<error>Cannot automatically bump version because this package does not appear to '
+                              'use Semver. Use `packagr bump <version>` instead</error>')
+                    return
+
+                if major_opt or minor_opt:
+                    if major_opt:
+                        major = int(major) + 1
+
+                    if minor_opt:
+                        minor = int(minor) + 1
+
+                elif not version_opt:
+                    bugfix = int(bugfix) + 1
+
+                new_version = f'{major}.{minor}.{bugfix}'
+
+            self.update_config(config, version=new_version)
+            self.line(f'Updated version to {new_version}')
 
         else:
-            try:
-                major, minor, bugfix = version.split('.')
-            except ValueError:
-                self.line('<error>Cannot automatically bump version because this package does not appear to '
-                          'use Semver. Use `packagr bump <version>` instead</error>')
-                return
-
-            if major_opt or minor_opt:
-                if major_opt:
-                    major = int(major) + 1
-
-                if minor_opt:
-                    minor = int(minor) + 1
-
-            elif not version_opt:
-                bugfix = int(bugfix) + 1
-
-            new_version = f'{major}.{minor}.{bugfix}'
-
-        self.update_config(config, version=new_version)
-        self.line(f'Updated version to {new_version}')
+            self.line('<error>No package found - Run `packagr init` first</error>')
 
 
 class CreatePackage(Command):
@@ -243,12 +267,13 @@ class CreatePackage(Command):
             'version': '0.1.0',
             'packages': [name]
         }
-        if not os.path.exists(name):
+        if os.path.exists('packagr.toml'):
+            if not overwrite:
+                if not self.confirm('A package already exists at this location. Overwrite?', False, '(?i)^(y|j)'):
+                    self.line('<error>Operation cancelled by user</error>')
+                    return
+        else:
             os.makedirs(name)
-
-        if os.path.exists('packagr.toml') and not overwrite:
-            if not self.confirm('A package already exists at this location. Overwrite?', False, '(?i)^(y|j)'):
-                return
 
         self.write_package_content(template)
         response = 'Created config file `packagr.toml`'

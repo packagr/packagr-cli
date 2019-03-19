@@ -1,5 +1,6 @@
 import toml
 from typing import Any, MutableMapping
+import requests
 
 
 def get_package_config(path: str = 'packagr.toml') -> MutableMapping:
@@ -17,3 +18,14 @@ def write_package_content(config: dict, path: str = 'packagr.toml') -> None:
     """
     with open(path, 'w') as f:
         f.write(toml.dumps(config))
+
+
+def check_configuration(hash_id: str, email: str, password: str) -> bool:
+    post = {
+        'email'   : email,
+        'password': password
+    }
+    response = requests.post('https://api.packagr.app/api/auth/login/', post)
+    assert response.status_code == 200
+    assert response.json().get('profile', {}).get('hash_id') == hash_id
+    return True
