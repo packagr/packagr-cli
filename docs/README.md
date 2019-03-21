@@ -175,14 +175,22 @@ This command will push your package to Packagr. If you are uploading many packag
 Packagr CLI will have the ability to display detailed logs from Packagr, which offers a big advantage over `twine`'s
 limited ability to handle error responses
 
+### Create token
+`packagr create-token <package> <email> [--write-access]`
+
+This command creates an access token for a given package and user. If the `--write-access` flag is provided, then the 
+created token will have write access.
+
+### Delete token
+`packagr token delete <package> <email>`
+
+This command deletes an access token for a given package and user.
 
 ### Coming soon
 
 The following commands will be added to future versions of Packagr CLI:
 
 - ``packagr set-readme <readme-file>``: passes the content of a readme file to `Description`
-- ``packagr token create <my-package> <email> [--read-only]``: Creates an access token for a package
-- ``packagr token delete <my-package> <email> [--no-warnings]``: Deletes an access token
 - ``packagr set-public <my-package>``: Sets a package as `public`
 - ``packagr set-private <my-package>``: Sets a package as `private`
 
