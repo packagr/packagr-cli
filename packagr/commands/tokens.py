@@ -48,11 +48,13 @@ class DeleteToken(Command):
         self.line(f'Attempting to delete access token for user {email} and package {package_name}...')
 
         package = self.retrieve_package(package_name)
-        user = self.retrieve_user(email)
-        token = self.retrieve_token(package, user)
 
         if package:
+            user = self.retrieve_user(email)
+
             if user:
+                token = self.retrieve_token(package, user)
+
                 if token:
                     if self.delete_access_token(token):
                         self.line('<info>Access token deleted</info>')

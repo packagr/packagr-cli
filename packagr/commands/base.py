@@ -58,14 +58,15 @@ class Command(BaseCommand):
 
     def retrieve_token(self, package: Package, user: User) -> Optional[Token]:
         tokens = self.get_tokens()
-        matching = list(filter(lambda x: x.package == package.uuid and x.user == user.hash_id, tokens))
 
-        if matching:
-            return matching[0]
+        if tokens:
+            matching = list(filter(lambda x: x.package == package.uuid and x.user == user.hash_id, tokens))
 
-        else:
-            self.line('<error>Cannot find an access token for this user/package</error>')
-            return None
+            if matching:
+                return matching[0]
+
+        self.line('<error>Cannot find an access token for this user/package</error>')
+        return None
 
     def retrieve_user(self, email: str) -> Optional[User]:
         users = self.get_users()
