@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from cleo import Application
-from packagr.commands import admin, packaging
+from packagr.commands import admin, packaging, tokens
 
 
 application = Application()
@@ -19,6 +19,10 @@ application.add(admin.BumpVersion())
 # package
 application.add(packaging.CreatePackage())
 application.add(packaging.UploadPackage())
+
+# tokens
+application.add(tokens.CreateToken())
+application.add(tokens.DeleteToken())
 
 
 def run():

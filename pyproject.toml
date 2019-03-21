@@ -3,7 +3,7 @@ name = "packagr-cli"
 packages = [
     { include = "packagr" },
 ]
-version = "0.2.0"
+version = "0.3.0"
 description = "A CLI for https://www.packagr.app"
 readme = 'docs/README.md'
 authors = ["Chris Davies <chris@packagr.app>"]

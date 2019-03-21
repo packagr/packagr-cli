@@ -3,6 +3,18 @@ import mock
 from cleo import CommandTester
 from packagr.packagr import application
 from packagr.commands.base import Command
+from packagr import utilities
+from packagr.objects import Package, Token, User
+
+
+class MockIO(object):
+    _out = []
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def write_line(self, styled, verbosity):
+        self._out.append(styled)
 
 
 class MockRequest:
@@ -19,11 +31,35 @@ class MockRequest:
         }
 
 
+def gen_response(code, resp):
+    class Response:
+        status_code = code
+
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def json(self):
+            return resp
+
+    return Response
+
+
+class MockTokenRequest:
+    def __init__(self, *args, **kwargs):
+        pass
+
+    status_code = 200
+
+    def json(self):
+        return [{'name': 'test'}]
+
+
 mock_package_config = {
     'name': 'test',
     'version': '0.1.0',
     'array': ['grr'],
-    'grr': 'arg'
+    'grr': 'arg',
+    'hash-id': '1234'
 }
 
 mock_global_config = {
@@ -97,6 +133,10 @@ class CliTests(unittest.TestCase):
         with mock.patch('subprocess.call', mock.MagicMock(return_value=0)):
             tester.execute('foo')
             self.assertIn('Installed package foo and added it to the config', tester.io.fetch_output())
+
+            with mock.patch.object(Command, 'append', mock.MagicMock(return_value=None)):
+                tester.execute('foo')
+                self.assertIn('Package foo was installed', tester.io.fetch_output())
 
         with mock.patch('subprocess.call', mock.MagicMock(return_value=1)):
             tester.execute('foo2')
@@ -260,6 +300,159 @@ class BaseCommandTestCase(unittest.TestCase):
             tester.execute('foor bar')
             self.assertIn('Unable to perform this action because no package exists at the current location',
                           tester.io.fetch_output())
+
+
+@mock.patch('packagr.utilities.check_configuration', mock.MagicMock(return_value=True))
+@mock.patch('packagr.utilities.get_access_token', mock.MagicMock(return_value='1234'))
+@mock.patch.object(Command, 'get_global_config', mock.MagicMock(return_value=mock_global_config))
+class TokenTestCase(unittest.TestCase):
+    def test_create(self):
+        command = application.find('create-token')
+        tester = CommandTester(command)
+        with mock.patch('packagr.utilities.get_packages',
+                        mock.MagicMock(return_value=[Package('test', '1234')])) as mock_packages:
+            with mock.patch('packagr.utilities.get_users', mock.MagicMock(return_value=[User('test', '1234')])):
+                with mock.patch('packagr.utilities.get_users',
+                                mock.MagicMock(return_value=[User('test', '1234')])) as mock_users:
+                    with mock.patch('packagr.utilities.create_access_token',
+                                    mock.MagicMock(return_value=(True, None))) as mock_create_access_token:
+                        tester.execute('test test')
+                        self.assertIn('Access token created', tester.io.fetch_output())
+
+                        mock_create_access_token.return_value = False, 'error'
+                        tester.execute('test test')
+                        self.assertIn('Could not create access token due to error error', tester.io.fetch_output())
+
+                    mock_users.return_value = []
+                    tester.execute('test test')
+                    self.assertIn('Cannot find a user with that email', tester.io.fetch_output())
+
+                    mock_packages.return_value = []
+                    tester.execute('test test')
+                    self.assertIn('Cannot find a package with that name', tester.io.fetch_output())
+
+    def test_delete(self):
+        command = application.find('delete-token')
+        tester = CommandTester(command)
+
+        with mock.patch('packagr.utilities.get_packages',
+                        mock.MagicMock(return_value=[Package('package', '1234')])) as mock_packages:
+            with mock.patch('packagr.utilities.get_users', mock.MagicMock(return_value=[User('test', '1234')])):
+                with mock.patch('packagr.utilities.get_users',
+                                mock.MagicMock(
+                                    return_value=[User(email='me@email.com', hash_id='hash')])
+                                ) as mock_users:
+                    with mock.patch('packagr.utilities.get_tokens',
+                                    mock.MagicMock(return_value=
+                                                   [Token(uuid='1234', user='hash', package='1234')])
+                                    ) as mock_get_tokens:
+                        with mock.patch('packagr.utilities.delete_access_token',
+                                        mock.MagicMock(return_value=(True, None))) as mock_delete:
+                            tester.execute('package me@email.com')
+                            self.assertIn('Access token deleted', tester.io.fetch_output())
+
+                            mock_delete.return_value = False, 'a test error'
+                            tester.execute('package me@email.com')
+                            self.assertIn('a test error', tester.io.fetch_output())
+
+                            mock_get_tokens.return_value = []
+                            tester.execute('package me@email.com')
+                            self.assertIn('Cannot delete access token for this package/user combination',
+                                          tester.io.fetch_output())
+
+                            mock_users.return_value = []
+                            tester.execute('package me@email.com')
+                            self.assertIn('Cannot find a user with that email',
+                                          tester.io.fetch_output())
+
+                            mock_packages.return_value = []
+                            tester.execute('package me@email.com')
+                            self.assertIn('Cannot find a package with that name',
+                                          tester.io.fetch_output())
+
+
+class UtilitiesTestCase(unittest.TestCase):
+    @mock.patch('packagr.utilities.check_configuration', mock.MagicMock(return_value=True))
+    @mock.patch('packagr.utilities.get_package_config', mock.MagicMock(return_value=mock_global_config))
+    def test_get_access_token(self):
+        with mock.patch('requests.post', gen_response(200, {'token': '1234'})):
+            token = utilities.get_access_token()
+            self.assertEqual(token, '1234')
+
+        with mock.patch('requests.post', gen_response(400, {})):
+            token = utilities.get_access_token()
+            self.assertIsNone((token))
+
+    def test_get_packages(self):
+        with mock.patch('requests.get', gen_response(200, [{'name': 'test', 'uuid': '1234'}])):
+            packages = utilities.get_packages({})
+            self.assertEqual(len(packages), 1)
+
+    def test_get_tokens(self):
+        with mock.patch('requests.get', gen_response(200, [{'package': 'test', 'user': 'test', 'uuid': '1234'}])):
+            tokens = utilities.get_tokens({})
+            self.assertEqual(len(tokens), 1)
+
+        with mock.patch('requests.get', gen_response(400, [{'package': 'test', 'user': 'test', 'uuid': '1234'}])):
+            tokens = utilities.get_tokens({})
+            self.assertIsNone(tokens)
+
+    def test_get_users(self):
+        with mock.patch('requests.get', gen_response(200, [{'email': 'test', 'hash_id': 'test'}])):
+            users = utilities.get_users({})
+            self.assertEqual(len(users), 1)
+
+    def test_create_access_token(self):
+        with mock.patch('requests.post', gen_response(201, None)):
+            status, response = utilities.create_access_token({}, Package('test', '1234'), User('test', '1234'))
+            self.assertTrue(status)
+            self.assertIsNone(response)
+
+        with mock.patch('requests.post', gen_response(400, None)):
+            status, response = utilities.create_access_token({}, Package('test', '1234'), User('test', '1234'))
+            self.assertFalse(status)
+            self.assertEqual(response, 400)
+
+    @mock.patch('packagr.utilities.check_configuration', mock.MagicMock(return_value=True))
+    def test_delete_access_token(self):
+        with mock.patch('packagr.utilities.get_package_config',
+                        mock.MagicMock(return_value=mock_package_config)) as mock_config:
+            with mock.patch('requests.delete', gen_response(204, {})):
+                deleted, error = utilities.delete_access_token(Token('1234', 'test', 'test'), {})
+                self.assertTrue(deleted)
+                self.assertIsNone(error)
+
+                deleted, error = utilities.delete_access_token(Token('1234', 'test', '1234'), {})
+                self.assertFalse(deleted)
+                self.assertEqual(error, 'Cannot delete access tokens belonging to the account owner')
+
+            with mock.patch('requests.delete', gen_response(400, {})):
+                deleted, error = utilities.delete_access_token(Token('1234', 'test', 'test'), {})
+                self.assertFalse(deleted)
+                self.assertEqual(error, 'Could not delete access token due to 400 error')
+
+            mock_config.return_value = None
+            deleted, error = utilities.delete_access_token(Token('1234', 'test', 'test'), {})
+            self.assertFalse(deleted)
+            self.assertEqual(error, 'Package config not found')
+
+
+class ObjectTestCase(unittest.TestCase):
+    def test_object_strings(self):
+        pkg = Package('test', '1234')
+        self.assertEqual('test', str(pkg))
+
+        user = User('test', '1234')
+        self.assertEqual('test', str(user))
+
+
+class AuthTokenTestCase(unittest.TestCase):
+    @mock.patch('packagr.utilities.get_access_token', mock.MagicMock(return_value=None))
+    def test_create(self):
+        command = application.find('create-token')
+        tester = CommandTester(command)
+        tester.execute('test test')
+        self.assertIn('Unable to get login token from Packagr', tester.io.fetch_output())
 
 
 if __name__ == '__main__':

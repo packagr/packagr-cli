@@ -45,8 +45,8 @@ class SetValue(Command):
     Adds a configuration variable to your project config
 
     set
-        {key? : The property to update}
-        {value? : The new value}
+        {key : The property to update}
+        {value : The new value}
     """
     def handle(self) -> None:
         key, value = self.argument('key'), self.argument('value')
